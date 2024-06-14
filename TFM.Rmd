@@ -767,7 +767,7 @@ Data split
 
 ```{r}
 set.seed(123) 
-data_split <- initial_split(mh_dataset1, prop = 0.8)
+data_split <- initial_split(mh_dataset1, prop = 0.7)
 train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
@@ -804,7 +804,7 @@ Cross-validation
 
 ```{r}
 set.seed(123)
-cv_splits <- vfold_cv(train_data, v = 8)
+cv_splits <- vfold_cv(train_data, v = 5)
 
 ```
 
@@ -926,11 +926,9 @@ We will also give the Gender variable numerical values so that they can be used 
 
 ```{r}
 mh_dataset1 <- mh_dataset1 %>%
-  mutate(Sex = case_when(
-    Sex == 'Male'   ~ 0,
-    Sex == 'Female' ~ 1,
-    Sex == 'Others' ~ 2,
-    TRUE            ~ NA_integer_))
+  mutate(`Sex` = as.factor(`Sex`)) %>%
+  dummy_cols("Sex", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Sex_", "", .x), starts_with("Sex_"))
 ```
 
 #### Converting social media user into binary 
@@ -1022,7 +1020,7 @@ Categorical variables to factors
 ```{r}
 mh_dataset1 <- mh_dataset1 %>%
   mutate(across(c(
-    Sex, 
+    `Female`,`Male`,`Others`, 
     `Between 1 and 2 hours`, `Between 2 and 3 hours`, `Between 3 and 4 hours`, `Between 4 and 5 hours`, 
     `Less than an Hour`, `More than 5 hours`, 
     Discord, Facebook, Instagram, Pinterest, Reddit, Snapchat, TikTok, Twitter, YouTube, 
@@ -1030,7 +1028,8 @@ mh_dataset1 <- mh_dataset1 %>%
     Retired, `Salaried Worker`, `School Student`, `University Student`, 
     Company, Goverment, `N/A`, Private, School, University, 
     Outcome
-  ), as.factor))
+  ), as.factor)) %>% select(-Self_Esteem_Score,-Depression_Score, -Anxiety_Score, -ADHD_Score)
+
 
 ```
 
@@ -1038,7 +1037,7 @@ Split Data
 
 ```{r}
 set.seed(123) 
-data_split <- initial_split(mh_dataset1, prop = 0.8)
+data_split <- initial_split(mh_dataset1, prop = 0.7)
 train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
@@ -1054,7 +1053,9 @@ recipe <- recipe(Outcome ~ ., data = train_data) %>%
 
 ```
 
-Model 
+
+Best hyperparameters 
+
 
 ```{r}
 knn_spec <- nearest_neighbor(neighbors = 5) %>%
@@ -1076,7 +1077,7 @@ Cross-validation
 
 ```{r}
 set.seed(123)
-cv_splits <- vfold_cv(train_data, v = 8)
+cv_splits <- vfold_cv(train_data, v = 5)
 ```
 
 Train and evaluation
@@ -1085,17 +1086,21 @@ Train and evaluation
 knn_res <- knn_workflow %>%
   fit_resamples(
     resamples = cv_splits,
-    metrics = metric_set(yardstick::roc_auc, yardstick::sens, yardstick::spec, yardstick::accuracy)
-  )
+    metrics = metric_set(roc_auc)
+)
 
-knn_metrics <- knn_res %>%
-  collect_metrics()
-print(knn_metrics)
+best_knn <- select_best(knn_res, "roc_auc")
 ```
 
 Final fit on the training data
 ```{r}
-final_knn <- knn_workflow %>%
+final_knn_workflow <- finalize_workflow(knn_workflow,best_knn)
+```
+
+Final fit and test set prediction
+
+```{r}
+final_knn <- final_knn_workflow %>%
   fit(data = train_data)
 ```
 
@@ -1113,21 +1118,25 @@ test_predictions_knn_class <- final_knn %>%
 # Combine predictions with the test data
 test_knn_predictions <- bind_cols(test_predictions_knn_prob, test_predictions_knn_class, test_data)
 
+# Evaluate on the test set
+accuracy_metric_knn <- test_knn_predictions %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
 
-test_knn_metrics <- test_knn_predictions %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    test_knn_predictions %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    test_knn_predictions %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    test_knn_predictions %>%
-      yardstick::spec(Outcome, .pred_class)
-  )
+roc_auc_metric_knn <- test_knn_predictions %>%
+  roc_auc(truth = Outcome, .pred_0)
+
+sensitivity_metric_knn <- test_knn_predictions %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_knn <- test_knn_predictions %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_knn_metrics <- bind_rows(
+  accuracy_metric_knn,
+  roc_auc_metric_knn,
+  sensitivity_metric_knn,
+  specificity_metric_knn
+)
 
 print(test_knn_metrics)
 
@@ -1166,7 +1175,7 @@ Cross-validation and grid tuning
 
 ```{r}
 set.seed(123)
-cv_splits <- vfold_cv(train_data, v = 8)
+cv_splits <- vfold_cv(train_data, v = 5)
 log_reg_grid <- grid_regular(
   penalty(range = c(0.001, 1)),
   mixture(range = c(0, 1)),
@@ -1182,20 +1191,17 @@ tuned_log_reg <- tune_grid(
   log_reg_workflow,
   resamples = cv_splits,
   grid = log_reg_grid,
- metrics = metric_set(yardstick::accuracy, yardstick::roc_auc, yardstick::sens, yardstick::spec))
+ metrics = metric_set(roc_auc)
+)
 
-log_reg_metrics <- tuned_log_reg %>%
-  collect_metrics()
-print(log_reg_metrics)
+best_log_reg <- 
+  select_best(tuned_log_reg, "roc_auc")
 
 ```
 
 Best Hyperparameters
 
 ```{r}
-best_log_reg <- 
-  select_best(tuned_log_reg, "roc_auc")
-
 final_log_reg_workflow <- 
   finalize_workflow(log_reg_workflow,
                     best_log_reg)
@@ -1226,20 +1232,24 @@ test_log_predictions <- bind_cols(test_predictions_log_prob, test_predictions_lo
 Calculating metrics on the test set 
 
 ```{r}
-test_log_metrics <- test_log_predictions %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    test_log_predictions %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    test_log_predictions %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    test_log_predictions %>%
-      yardstick::spec(Outcome, .pred_class)
-  )
+accuracy_metric_log <- test_log_predictions %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
+
+roc_auc_metric_log <- test_log_predictions %>%
+  roc_auc(truth = Outcome, .pred_0)
+
+sensitivity_metric_log <- test_log_predictions %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_log <- test_log_predictions %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_log_metrics <- bind_rows(
+  accuracy_metric_log,
+  roc_auc_metric_log,
+  sensitivity_metric_log,
+  specificity_metric_log
+)
 
 print(test_log_metrics)
 ```
@@ -1300,7 +1310,7 @@ Cross-validation and grid tune
 
 ```{r}
 set.seed(123)
-cv_splits <- vfold_cv(train_data, v = 8)
+cv_splits <- vfold_cv(train_data, v = 5)
 
 gboost_grid <- grid_regular(
   trees(range = c(100, 1000)),
@@ -1317,15 +1327,14 @@ tuned_gboost <- tune_grid(
   boost_workflow,
   resamples = cv_splits,
   grid = gboost_grid,
-  metrics = metric_set(yardstick::accuracy, yardstick::roc_auc, yardstick::sens, yardstick::spec)
+  metrics = metric_set(roc_auc)
   )
+best_gboost <- select_best(tuned_gboost, "roc_auc")
 ```
 
 Best Hyperparameters
 
 ```{r}
-
-best_gboost <- select_best(tuned_gboost, "roc_auc")
 
 final_gboost_workflow <- finalize_workflow(
   boost_workflow,
@@ -1336,10 +1345,8 @@ final_gboost_workflow <- finalize_workflow(
 Final fit on training data 
 
 ```{r}
-
 final_boost <- final_gboost_workflow %>%
   fit(data = train_data)
-
 ```
 
 Predict on test set 
@@ -1360,22 +1367,27 @@ test_boost_predictions <- bind_cols(test_predictions_boost_prob, test_prediction
 Calculating metrics on the test set 
 
 ```{r}
-test_boost_metrics <- test_boost_predictions %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    test_boost_predictions %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    test_boost_predictions %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    test_boost_predictions %>%
-      yardstick::spec(Outcome, .pred_class)
-  )
+accuracy_metric_boost <- test_boost_predictions %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
+
+roc_auc_metric_boost <- test_boost_predictions %>%
+  roc_auc(truth = Outcome, .pred_0)
+
+sensitivity_metric_boost <- test_boost_predictions %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_boost <- test_boost_predictions %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_boost_metrics <- bind_rows(
+  accuracy_metric_boost,
+  roc_auc_metric_boost,
+  sensitivity_metric_boost,
+  specificity_metric_boost
+)
 
 print(test_boost_metrics)
+
 ```
 
 Confusion Matrix 
@@ -1414,8 +1426,8 @@ fit_gini_boost %>%
 Split Data 
 
 ```{r}
-set.seed(123) 
-data_split <- initial_split(mh_dataset1, prop = 0.8)
+set.seed(123)
+data_split <- initial_split(mh_dataset1, prop = 0.7)
 train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
@@ -1434,9 +1446,9 @@ recipe <- recipe(Outcome ~ ., data = train_data) %>%
 
 ```{r}
 rf_spec <- rand_forest(
-  trees = tune(),  # Start with a moderate number of trees
+  trees = tune(),
   mtry = tune(),
-  min_n = tune()# Add maximum depth tuning
+  min_n = tune()
 ) %>%
   set_engine("ranger") %>%
   set_mode("classification")
@@ -1451,10 +1463,11 @@ Cross-validation and grid tune
 
 ```{r}
 set.seed(123)
-cv_splits <- vfold_cv(train_data, v = 10)
+cv_splits <- vfold_cv(train_data, v = 5)
+
 rf_grid <- grid_regular(
   mtry(range = c(1, ncol(train_data) - 1)),
-  trees(range = c(100, 1000)),  # Moderate number of trees
+  trees(range = c(100, 500)),
   min_n(range = c(2, 10)),
   levels = 5
 )
@@ -1468,7 +1481,8 @@ rf_res <- tune_grid(
   rf_workflow,
   resamples = cv_splits,
   grid = rf_grid,
-  metrics = metric_set(yardstick::roc_auc))
+  metrics = metric_set(roc_auc)
+)
 
 best_rf <- select_best(rf_res, "roc_auc")
 ```
@@ -1524,7 +1538,6 @@ test_rf_metrics <- bind_rows(
 )
 
 print(test_rf_metrics)
-
 ```
 
 Confusion Matrix 
@@ -1542,8 +1555,8 @@ conf_mat_rf_test %>% summary()
 
 ```{r}
 svm_spec <- svm_rbf(
-  cost = tune(),         # C parameter
-  rbf_sigma = tune()     # Gamma parameter
+  cost = tune(),         
+  rbf_sigma = tune()     
 ) %>%
   set_engine("kernlab") %>%
   set_mode("classification")
@@ -1561,7 +1574,8 @@ cv_splits <- vfold_cv(train_data, v = 5)
 svm_grid <- grid_regular(
   cost(range = c(0.01, 10)),
   rbf_sigma(range = c(0.01, 1)),
-  levels = 5)
+  levels = 5
+)
 ```
 
 Train the model with re sampling 
@@ -1572,20 +1586,18 @@ tuned_svm <- tune_grid(
   svm_workflow,
   resamples = cv_splits,
   grid = svm_grid,
-   metrics = metric_set(yardstick::accuracy, yardstick::roc_auc, yardstick::sens, yardstick::spec)
-  )
+  metrics = metric_set(roc_auc)
+)
+
+best_svm <- select_best(tuned_svm, "roc_auc")
 ```
 
 Best hyperparameters 
 
 ```{r}
-best_svm <- select_best(tuned_svm, "roc_auc")
-
 final_svm_workflow <- finalize_workflow(
   svm_workflow,
-  best_svm
-)
-
+  best_svm)
 ```
 
 Final fit and test set prediction
@@ -1609,24 +1621,28 @@ test_predictions_svm_class <- final_svm %>%
 # Combine predictions with the test data
 test_svm_predictions <- bind_cols(test_predictions_svm_prob, test_predictions_svm_class, test_data)
 
+
 # Evaluate on the test set
-test_metrics_svm <- test_svm_predictions %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    test_svm_predictions %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    test_svm_predictions %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    test_svm_predictions %>%
-      yardstick::spec(truth = Outcome, estimate = .pred_class)
-  )
+accuracy_metric_svm <- test_svm_predictions %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
 
-print(test_metrics_svm)
+roc_auc_metric_svm <- test_svm_predictions %>%
+  roc_auc(truth = Outcome, .pred_0)
 
+sensitivity_metric_svm <- test_svm_predictions %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_svm <- test_svm_predictions %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_metrics_svm <- bind_rows(
+  accuracy_metric_svm,
+  roc_auc_metric_svm,
+  sensitivity_metric_svm,
+  specificity_metric_svm
+)
+
+print(test_rf_metrics)
 ```
 
 Confusion Matrix 
@@ -1658,19 +1674,23 @@ Cross-validation and model fitting
 nb_res <- nb_workflow %>%
   fit_resamples(
     resamples = cv_splits,
-    metrics = metric_set(yardstick::accuracy, yardstick::roc_auc, yardstick::sens, yardstick::spec)
+    metrics = metric_set(roc_auc)
   )
 
-nb_metrics <- nb_res %>%
-  collect_metrics()
+best_nb <- select_best(nb_res, "roc_auc")
+```
 
-print(nb_metrics)
+
+```{r}
+final_nb_workflow <- finalize_workflow(
+  nb_workflow,
+  best_nb)
 ```
 
 Final fit 
 
 ```{r}
-final_nb <- nb_workflow %>%
+final_nb <- final_nb_workflow %>%
   fit(data = train_data)
 ```
 
@@ -1687,20 +1707,25 @@ test_predictions_nb_class <- final_nb %>%
 # Combine predictions with the test data
 test_nb_predictions <- bind_cols(test_predictions_nb_prob, test_predictions_nb_class, test_data)
 
-test_metrics_nb <- test_nb_predictions %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    test_nb_predictions %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    test_nb_predictions %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    test_nb_predictions %>%
-      yardstick::spec(truth = Outcome, estimate = .pred_class)
-  )
+# Evaluate on the test set
+accuracy_metric_nb <- test_nb_predictions %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
+
+roc_auc_metric_nb <- test_nb_predictions %>%
+  roc_auc(truth = Outcome, .pred_0)
+
+sensitivity_metric_nb <- test_nb_predictions %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_nb <- test_nb_predictions %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_metrics_nb <- bind_rows(
+  accuracy_metric_nb,
+  roc_auc_metric_nb,
+  sensitivity_metric_nb,
+  specificity_metric_nb
+)
 
 print(test_metrics_nb)
 
@@ -1740,7 +1765,6 @@ combined_predictions <- test_data %>%
     test_knn_predictions %>% select(.pred_1) %>% rename(.pred_knn = .pred_1),
     test_nb_predictions %>% select(.pred_1) %>% rename(.pred_nb = .pred_1)
   )
-
 ```
 
 Ensemble Model 
@@ -1781,22 +1805,26 @@ final_preds_class <- meta_fit %>%
 
 final_preds <- bind_cols(final_preds_prob, final_preds_class, test_data)
 
-final_metrics <- final_preds %>%
-  metrics(truth = Outcome, estimate = .pred_class) %>%
-  bind_rows(
-    final_preds %>%
-      roc_auc(truth = Outcome, .pred_1)
-  ) %>%
-  bind_rows(
-    final_preds %>%
-      sens(truth = Outcome, estimate = .pred_class)
-  ) %>%
-  bind_rows(
-    final_preds %>%
-      yardstick::spec(truth = Outcome, estimate = .pred_class)
-  )
+accuracy_metric_ensemble <- final_preds %>%
+  accuracy(truth = Outcome, estimate = .pred_class)
 
-print(final_metrics)
+roc_auc_metric_ensemble <- final_preds %>%
+  roc_auc(truth = Outcome, .pred_0)
+
+sensitivity_metric_ensemble <- final_preds %>%
+  sens(truth = Outcome, estimate = .pred_class)
+
+specificity_metric_ensemble <- final_preds %>%
+  yardstick::spec(truth = Outcome, estimate = .pred_class)
+
+test_ensemble_metrics <- bind_rows(
+  accuracy_metric_ensemble,
+  roc_auc_metric_ensemble,
+  sensitivity_metric_ensemble,
+  specificity_metric_ensemble
+)
+
+print(test_ensemble_metrics)
 
 ```
 
