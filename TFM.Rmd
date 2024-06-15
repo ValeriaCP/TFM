@@ -824,6 +824,7 @@ print(tree_metrics)
 final_tree <- tree_workflow %>%
   fit(data = train_data)
 
+saveRDS(final_tree, "tree_model.rds")
 ```
 
 Prediction 
@@ -1102,6 +1103,7 @@ Final fit and test set prediction
 ```{r}
 final_knn <- final_knn_workflow %>%
   fit(data = train_data)
+saveRDS(final_knn, "knn_model.rds")
 ```
 
 Predictions 
@@ -1212,6 +1214,8 @@ Fit on the training Data
 ```{r}
 final_log_reg <- final_log_reg_workflow %>%
   fit(data = train_data)
+saveRDS(final_log_reg, "log_model.rds")
+
 ```
 
 Prediction 
@@ -1252,6 +1256,7 @@ test_log_metrics <- bind_rows(
 )
 
 print(test_log_metrics)
+
 ```
 
 Confusion Matrix 
@@ -1347,6 +1352,8 @@ Final fit on training data
 ```{r}
 final_boost <- final_gboost_workflow %>%
   fit(data = train_data)
+saveRDS(final_boost, "boost_model.rds")
+
 ```
 
 Predict on test set 
@@ -1499,7 +1506,7 @@ Final fit and test set prediction
 final_rf <- final_rf_workflow %>%
   fit(data = train_data)
 
-#saveRDS(final_rf, "final_rf.rds")
+saveRDS(final_rf, "rf_model.rds")
 ```
 
 Predictions 
@@ -1538,6 +1545,7 @@ test_rf_metrics <- bind_rows(
 )
 
 print(test_rf_metrics)
+
 ```
 
 Confusion Matrix 
@@ -1605,6 +1613,7 @@ Final fit and test set prediction
 ```{r}
 final_svm <- final_svm_workflow %>%
   fit(data = train_data)
+saveRDS(final_svm, "svm_model.rds")
 
 ```
 
@@ -1642,7 +1651,9 @@ test_metrics_svm <- bind_rows(
   specificity_metric_svm
 )
 
-print(test_rf_metrics)
+print(test_metrics_svm)
+
+
 ```
 
 Confusion Matrix 
@@ -1692,6 +1703,8 @@ Final fit
 ```{r}
 final_nb <- final_nb_workflow %>%
   fit(data = train_data)
+saveRDS(final_nb, "nb_model.rds")
+
 ```
 
 Predictions 
@@ -1743,21 +1756,12 @@ conf_mat_nb_test %>% summary()
 
 ###Ensemble 
 
-```{r}
-#test_svm_predictions <- bind_cols(test_predictions_svm_prob, test_predictions_svm_class, test_data)
-#test_rf_predictions <- bind_cols(test_predictions_rf_prob, test_predictions_rf_class, test_data)
-#test_boost_predictions <- bind_cols(test_predictions_boost_prob, test_predictions_boost_class, test_data)
-#test_log_predictions <- bind_cols(test_predictions_log_prob, test_predictions_log_class, test_data)
-#test_knn_predictions <- bind_cols(test_predictions_knn_prob, test_predictions_knn_class, test_data)
-#test_tree_predictions <- bind_cols(test_predictions_tree_prob, test_predictions_tree_class, test_data)
-#test_nb_predictions <- bind_cols(test_predictions_nb_prob, test_predictions_nb_class, test_data)
-```
-
 Combine all the prediction for each model 
 
 ```{r}
 combined_predictions <- test_data %>%
   bind_cols(
+    test_tree_predictions %>% select(.pred_1) %>% rename(.pred_tree = .pred_1),
     test_svm_predictions %>% select(.pred_1) %>% rename(.pred_svm = .pred_1),
     test_rf_predictions %>% select(.pred_1) %>% rename(.pred_rf = .pred_1),
     test_boost_predictions %>% select(.pred_1) %>% rename(.pred_boost = .pred_1),
@@ -1792,6 +1796,7 @@ meta_workflow <- workflow() %>%
 meta_fit <- meta_workflow %>%
   fit(data = combined_predictions)
 
+saveRDS(meta_fit, "final_ensemble.rds")
 ```
 
 Predictions 
@@ -1837,3 +1842,25 @@ conf_mat_ens_test <-
 conf_mat_ens_test
 conf_mat_ens_test %>% summary()
 ```
+All models metrics to see which one is the best one 
+
+```{r}
+metrics_list <- list(
+  tree = test_tree_metrics,
+  knn = test_knn_metrics,
+  log = test_log_metrics, 
+  gboost = test_boost_metrics,
+  rf = test_rf_metrics,
+  svm = test_metrics_svm, 
+  nb = test_metrics_nb,
+  ensemble = test_ensemble_metrics
+)
+
+
+combined_metrics <- bind_rows(metrics_list, .id = "model") |> 
+  pivot_wider(names_from = .metric,values_from = .estimate) |> 
+  select(-.estimator)
+
+print(combined_metrics)
+```
+
