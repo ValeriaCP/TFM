@@ -8,7 +8,7 @@ editor_options:
 
 # PREDICTIVE MODEL ON MENTAL HEALTH DUE TO SOCIAL MEDIA USAGE
 
-Libraries 
+Libraries
 
 ```{r}
 rm(list = ls())
@@ -35,9 +35,9 @@ mh_dataset <- read_csv("smmh.csv")
 View(mh_dataset)
 ```
 
-##Descriptive Analysis 
+## **Descriptive Analysis**
 
-### Renaming the columns
+Renaming the columns
 
 ```{r}
 names(mh_dataset) <- c('Timestamp','Age', 'Sex', 'Relationship Status', 'Occupation',
@@ -49,9 +49,8 @@ names(mh_dataset) <- c('Timestamp','Age', 'Sex', 'Relationship Status', 'Occupat
 mh_dataset
 ```
 
-### Re-arranging the Columns
-
-Reorder the columns to establish a specific sequence of the questions.
+Re-arranging the columns to establish a specific sequence of the
+questions.
 
 ```{r}
 mh_dataset <- mh_dataset |> 
@@ -64,14 +63,14 @@ mh_dataset <- mh_dataset |>
 mh_dataset
 ```
 
-### Detecting Missing values
+Detecting Missing values
 
 ```{r}
 sum(is.na(mh_dataset))
 summary(mh_dataset)
 ```
 
-No missing values found on the data set.
+*No missing values found on the data set.*
 
 ## Data transformation
 
@@ -81,13 +80,15 @@ No missing values found on the data set.
 unique(mh_dataset$Sex)
 ```
 
-Deleting those that say 'There are others' because they are deemed to have not filled out the questionnaire seriously.
+Removed "There are other" responses as they are considered to have not
+taken the survey seriously.
 
 ```{r}
 mh_dataset <- mh_dataset[mh_dataset$Sex != 'There are others???', , drop = FALSE]
 ```
 
-Grouped the "Nonbinary", "Non-binary","NB","unsure", "Trans" ,"Non binary" as "Others"
+Grouped the "Nonbinary", "Non-binary","NB","unsure", "Trans" ,"Non
+binary" as "Others"
 
 ```{r}
 mh_dataset1 <- mh_dataset |> mutate(
@@ -100,40 +101,50 @@ unique(mh_dataset1$Sex)
 
 ### Age
 
-Converted age to integer to ensure compatibility with machine learning algorithms
+Converted age to integer to ensure compatibility with machine learning
+algorithms
 
 ```{r}
 mh_dataset1$Age <- as.integer(mh_dataset1$Age)
 ```
 
-Making a table:
+Making a table
 
 ```{r}
-age_table <- table(mh_dataset1$Age)
-
-# Converted the table to a data frame
-age_table <- as.data.frame(age_table)
+age_table <- as.data.frame(table(mh_dataset1$Age))
 names(age_table) <- c("Age", "Frequency")
 age_table
 
 ```
 
+As illustrated in the table above, there is a significant discrepancy in
+the data, with an age leap from 69 years to 91 years.
 
-As illustrated in the preceding table, there is a significant discrepancy in the data, with an age leap from 69 years to 91 years. Upon closer examination, the recorded occupation for the 91-year-old individual is "University Student." This observation suggests the possibility of a typographical error in the entry for this specific data point.
+Upon closer examination, the recorded occupation for the 91-year-old
+individual is "University Student" suggesting the possibility of a
+typographical error in the entry for this specific data point.
 
 ```{r}
 mh_dataset1[mh_dataset1$Age == '91', ] 
 ```
-Removed the complete row with the age of 91, since it is just a one-time error and doesn't represent a recurring issue, this row was removed to ensure the analysis and model are accurate and representative of the true conditions. 
+
+Removed the complete row with the age of 91, since it is just a one-time
+error and doesn't represent a recurring issue, also to ensure the
+analysis and model are accurate and representative of the true
+conditions.
 
 ```{r}
 mh_dataset1 <- mh_dataset1[mh_dataset1$Age != 91, ]
 mh_dataset1[mh_dataset1$Age == '91', ] 
 ```
 
-### Social Media User 
+### Social Media User
 
-Some contestants claim they are not social media users, yet other questions suggest they are active on various platforms. Given that they have specified which platforms they use, we will classify them as social media users in our records and address this discrepancy accordingly.
+Some contestants answered that they were not social media users, yet
+other questions suggested they were active on various platforms. Given
+that they have specified which platforms they use, we will classify them
+as 'social media users' in our records and address this discrepancy
+accordingly.
 
 ```{r}
 mh_dataset1[mh_dataset1$`Social Media User?` == 'No', ]
@@ -147,11 +158,13 @@ mh_dataset1[mh_dataset1$`Social Media User?` == 'No', ]
 
 ```
 
-
 ### Scalar Adjustment
 
-We need to modify the scaling of self-esteem Question 2. Unlike other questions where a higher score indicates lower mental health, in this
-case, a higher score signifies more positive or better mental health. Therefore, it is necessary to reverse the scale to maintain consistency.
+The scaling of self-esteem Question 2 was modified. Unlike the other
+questions where a higher score indicates lower mental health, in this
+question, a higher score means positive or better mental health.
+Therefore, it was necessary to reverse the scale to maintain
+consistency.
 
 ```{r}
 mh_dataset1 <- mh_dataset1 %>%
@@ -165,18 +178,17 @@ mh_dataset1 <- mh_dataset1 %>%
   ))
 ```
 
-### Summation of Scores of different aspects of mental well being
+### Total Score Calculation for Each Mental Health Aspect
 
-Calculating the total number of points accrued by the different questions on various aspects of mental health and wellbeing.
-
-Questions measuring the 4 aspects of mental wellbeing:
+Questions measuring the four aspects of mental well-being:
 
 -   Attention Deficit Hyperactivity Disorder (ADHD)
 -   Anxiety
 -   Self Esteem
 -   Depression
 
-Summing scores from ADHD, Anxiety, Self Esteem, and Depression individually
+Summing scores from ADHD, Anxiety, Self Esteem, and Depression
+individually, and create a new column for each score.
 
 ```{r}
 mh_dataset1$ADHD_Score <- rowSums(mh_dataset1[, c("ADHD Q1", "ADHD Q2", "ADHD Q3", "ADHD Q4")])
@@ -185,14 +197,14 @@ mh_dataset1$Self_Esteem_Score <- rowSums(mh_dataset1[, c("Self Esteem Q1", "Self
 mh_dataset1$Depression_Score <- rowSums(mh_dataset1[, c("Depression Q1", "Depression Q2", "Depression Q3")])
 ```
 
-Create a new column for "Total Score"
+Created a new column for "Total Score", with the summation of all scores
 
 ```{r}
 mh_dataset1$Total_Score <- rowSums(mh_dataset1[, c("ADHD_Score", "Anxiety_Score", "Self_Esteem_Score", "Depression_Score")])
-
 ```
 
-Delete question columns and timestamp columns as they will no longer be used:
+Deleted question columns and time stamp columns as they will no longer
+be used,
 
 ```{r}
  mh_dataset1 <- mh_dataset1 |>  select(-Timestamp, -`ADHD Q1`, -`ADHD Q2`, -`Anxiety Q1`, -`ADHD Q3`,-`Anxiety Q2`,-`ADHD Q4`,-`Self Esteem Q1`,-`Self Esteem Q2`,-`Self Esteem Q3`, -`Depression Q1`, -`Depression Q2`, -`Depression Q3`)
@@ -206,18 +218,23 @@ head(mh_dataset1)
 
 ### Adding an "Outcome" column
 
--   Total score of 59 is the highest an individual can obtain from the questionnaire, which would indicate that the individual is definitely experiencing negative symptoms in some aspect of mental health, based on binary classification.
+A total score of 60 is the highest possible score on the survey,
+indicating that the individual is experiencing several symptoms across
+any mental health aspect. Therefore, a threshold of 40 was established
+according to the following rules:
 
--   If the outcome is 0, this means that the individual is not experiencing severe mental health symptoms.
+-   If the total score is below 40, the outcome will be 0, suggesting
+    that the individual is not experiencing severe mental health
+    symptoms.
 
--   If the outcome is 1 means that the individual is experiencing severe mental health symptoms.
+-   A total score greater or equal than 40 will receive an outcome of 1,
+    suggesting severe mental health symptoms.
 
 Defining the function map_score:
 
 ```{r}
 map_score <- function(score) {
-  ifelse(score < 40, "0", ifelse(score >= 40, "1", NA))} #set up a threshold of 40 points, if higher score individual is very likely to have mental health symptoms
-  
+  ifelse(score < 40, "0", ifelse(score >= 40, "1", NA))} 
 ```
 
 Applying the map_score function to the 'Total_Score' column and creating
@@ -228,20 +245,17 @@ mh_dataset1 <- mh_dataset1 %>%
   mutate(Outcome = map_score(Total_Score))
 ```
 
-Converting 'Outcome' to factor type
+Converting 'Outcome' to factor type for machine learning
 
 ```{r}
-summary(mh_dataset1)
 mh_dataset1$Outcome <- as.factor(mh_dataset1$Outcome)
-
 ```
 
 ## Visualizations
 
-### Age 
+### Age
 
 ```{r}
-age_table
 mean(mh_dataset1$Age)
 sd(mh_dataset1$Age)
 ```
@@ -252,22 +266,20 @@ a <- ggplot(mh_dataset1, aes(x = Age)) +
   labs(x = "Age", y = "Count") +
   theme_classic() 
 a
+```
 
+```{r}
 ggsave(filename = "Age_plot.png", plot = a, width = 8, height = 6, dpi = 300)
-
-# geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
 ```
 
 ### Sex
 
+Set up as "total", the number of participants on the study
+
 ```{r}
-
-total <- nrow(mh_dataset1) #set up as "total" the number of participants on the study
-sex_table <- table(mh_dataset1$Sex)
-
+total <- nrow(mh_dataset1) 
+table(mh_dataset1$Sex)
 ```
-
-Create the count plot
 
 ```{r}
 p <- ggplot(mh_dataset1, aes(x = Sex)) +
@@ -278,7 +290,6 @@ p <- ggplot(mh_dataset1, aes(x = Sex)) +
 p
 ```
 
-
 ```{r}
 ggsave(filename = "Gender_plot.png", plot = p, width = 8, height = 6, dpi = 300)
 ```
@@ -286,7 +297,7 @@ ggsave(filename = "Gender_plot.png", plot = p, width = 8, height = 6, dpi = 300)
 Since, we only have 1% on "others" we can not make statistical
 inferences based on this one.
 
-### Relationship status 
+### Relationship status
 
 ```{r}
 table(mh_dataset$`Relationship Status`)
@@ -300,11 +311,11 @@ r <- ggplot(mh_dataset1, aes(x = `Relationship Status`)) +
   geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
 
 r
-
-ggsave(filename = "Relationship_status_plot.png", plot =r, width = 8, height = 6, dpi = 300)
-
 ```
-The sample is over represented for the single people by 59%.
+
+```{r}
+ggsave(filename = "Relationship_status_plot.png", plot =r, width = 8, height = 6, dpi = 300)
+```
 
 ### Occupation
 
@@ -320,31 +331,28 @@ o <- ggplot(mh_dataset1, aes(x = `Occupation`)) +
   geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
 
 o
+```
 
+```{r}
 ggsave(filename = "Occupation_plot.png", plot = o, width = 8, height = 6, dpi = 300)
-
 ```
 
-The sample is over represented for the university students by 61%.
-
-### Social media user 
+### Social media user
 
 ```{r}
-SM_user <- table(mh_dataset1$`Social Media User?`)
-SM_user
+table(mh_dataset1$`Social Media User?`)
 ```
 
 ```{r}
-#ggplot(mh_dataset1, aes(x = `Social Media User?`)) + geom_bar(fill = c("Yes" = "green")) + labs(x = "User", y = "Count") +theme_minimal()
+ggplot(mh_dataset1, aes(x = `Social Media User?`)) + geom_bar(fill = c("Yes" = "#cccccc")) + labs(x = "User", y = "Count") +theme_minimal()
 ```
 
-Given that there is only one response to this particular question, we will exclude it from the predictive models. The lack of variance in responses can skew the results, potentially compromising the accuracy of our final analysis.
+Given that there is only one response to this particular question, we
+will exclude it from the predictive models. The lack of variance in
+responses can skew the results, potentially compromising the accuracy of
+our final analysis.
 
-```{r}
-#mh_dataset1 <- mh_dataset1 |> select(-`Social Media User?`) #for new answers will it be neccesary to leave on the model?
-```
-
-###Platforms used 
+### Platforms used
 
 ```{r}
 platforms_list <- strsplit(as.character(mh_dataset1$`Platforms Used`), ",\\s*")
@@ -376,18 +384,15 @@ pu <- ggplot(platforms_df, aes(x = Platform, y = Frequency, fill = Platform)) +
 
 pu
 ```
+
 ```{r}
 ggsave(filename = "Platforms_plot.png", plot = pu, width = 8, height = 6, dpi = 300)
 ```
 
-
-### Time spent 
+### Time spent
 
 ```{r}
-#Made a table counting the hours spent on social media named "time_spent_freq"
 time_spent_freq <- table(mh_dataset1$`Time Spent`)
-
-# Converted the table to a data frame
 time_spent_freq_df <- as.data.frame(time_spent_freq)
 names(time_spent_freq_df) <- c("Time_Spent", "Frequency")
 arrange(time_spent_freq_df, Frequency)
@@ -401,13 +406,13 @@ t <- ggplot(time_spent_freq_df, aes(x = Time_Spent, y = Frequency)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
 t
-
 ```
+
 ```{r}
 ggsave(filename = "Time_Spent_plot.png", plot = t, width = 8, height = 6, dpi = 300)
 ```
 
-### ADHD SCORE 
+### ADHD Score
 
 ```{r}
 adhd_mean <- mean(mh_dataset1$ADHD_Score)
@@ -427,11 +432,13 @@ ADHD <- ggplot(ADHD_Score_freq_df, aes(x = `ADHD Score`, y = Frequency)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
 ADHD
-ggsave(filename = "ADHD_Score_plot.png", plot = ADHD, width = 8, height = 6, dpi = 300)
-
 ```
 
-###Anxiety SCORE 
+```{r}
+ggsave(filename = "ADHD_Score_plot.png", plot = ADHD, width = 8, height = 6, dpi = 300)
+```
+
+### Anxiety Score
 
 ```{r}
 anx_mean <- mean(mh_dataset1$Anxiety_Score)
@@ -451,11 +458,13 @@ Anx <- ggplot(Anxiety_Score_freq_df, aes(x = `Anxiety Score`, y = Frequency)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
 Anx
-ggsave(filename = "Anxiety_Score_plot.png", plot = Anx, width = 8, height = 6, dpi = 300)
-
 ```
 
-###Depression SCORE 
+```{r}
+ggsave(filename = "Anxiety_Score_plot.png", plot = Anx, width = 8, height = 6, dpi = 300)
+```
+
+### Depression Score
 
 ```{r}
 dep_mean <- mean(mh_dataset1$Depression_Score)
@@ -475,12 +484,13 @@ dep <- ggplot(Depression_Score_freq_df, aes(x = `Depression Score`, y = Frequenc
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
 dep
-ggsave(filename = "Depression_Score_plot.png", plot = dep, width = 8, height = 6, dpi = 300)
-
-
 ```
 
-###Self steem SCORE 
+```{r}
+ggsave(filename = "Depression_Score_plot.png", plot = dep, width = 8, height = 6, dpi = 300)
+```
+
+### Self - Esteem Score
 
 ```{r}
 se_mean <- mean(mh_dataset1$Self_Esteem_Score)
@@ -500,10 +510,13 @@ se<- ggplot(Self_Esteem_Score_freq_df, aes(x = `Self Esteem Score`, y = Frequenc
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
 se
-ggsave(filename = "Self_Esteem_Score_plot.png", plot = se, width = 8, height = 6, dpi = 300)
-
 ```
-### Means and standard deviation of each mental health symptomp 
+
+```{r}
+ggsave(filename = "Self_Esteem_Score_plot.png", plot = se, width = 8, height = 6, dpi = 300)
+```
+
+### Means and standard deviation of each mental health symptom
 
 ```{r}
 results <- data.frame(
@@ -517,6 +530,7 @@ results <- data.frame(
 #webshot::install_phantomjs()
 results_kable <- kable(results, col.names = c("Score", "Mean", "Standard Deviation"))
 save_kable(results_kable, file = "kable_table.png")
+results_kable
 ```
 
 ```{r}
@@ -530,11 +544,13 @@ results_plot <- ggplot(results, aes(x = Score, y = Mean)) +
        y = "Mean Value") +
   theme_classic()
 results_plot
+```
 
+```{r}
 ggsave(filename = "Results_plot.png", plot = results_plot, width = 8, height = 6, dpi = 300)
 ```
 
-### Total Score 
+### Total Score
 
 ```{r}
 mean(mh_dataset1$Total_Score)
@@ -555,6 +571,9 @@ ts <- ggplot(Total_Score_freq_df, aes(x = `Total Score`, y = Frequency)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
 ts
+```
+
+```{r}
 ggsave(filename = "Total_Score_plot.png", plot = ts, width = 8, height = 6, dpi = 300)
 ```
 
@@ -576,43 +595,13 @@ outcome <- ggplot(mh_dataset1, aes(x = Outcome)) +
   theme_classic() +
   geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
 outcome
+```
+
+```{r}
 ggsave(filename = "Outcome_plot.png", plot = outcome, width = 8, height = 6, dpi = 300)
-
 ```
 
-#### Age and Occupation
-
-```{r}
-
-ggplot(mh_dataset1, aes(x = Occupation, y = Age)) +
-  geom_boxplot() +
-  theme_minimal() +
-  labs(title = "Age Distribution by Occupation",
-       x = "Occupation",
-       y = "Age") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-#### Age and ADHD Score 
-
-```{r}
-correlation_coefficient <- cor(mh_dataset1$Age, mh_dataset1$ADHD_Score)
-
-# Create scatter plot using ggplot2
-p <- ggplot(mh_dataset1, aes(x = Age, y = ADHD_Score)) +
-  geom_point(color = 'blue', alpha = 0.5) +  # Add points with some transparency
-  ggtitle(sprintf("Age vs ADHD Score\nCorrelation Coefficient: %.2f", correlation_coefficient)) +
-  xlab("Age") +
-  ylab("ADHD Score") +
-  theme_minimal() +  # Use a minimalistic theme
-  theme(plot.title = element_text(hjust = 0.5)) +  # Center the plot title
-  geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add a linear regression line without the confidence interval
-  theme_light(base_size = 16)  # Use a light theme with a base font size
-
-p
-
-```
+### Mean Scores of Mental Health Symptoms in Relation to Time Spent on Social Media Visualizations
 
 #### Mean ADHD score of each Time group of participants
 
@@ -623,7 +612,7 @@ mean_adhd_score <- mh_dataset1 %>%
   arrange(desc(mean_adhd))
 
 ggplot(mean_adhd_score, aes(y = reorder(`Time Spent`, mean_adhd), x = mean_adhd)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_bar(stat = "identity", fill = "#ce3c3c") +
   labs(x = "Mean ADHD Score", y = "Time Spent") +
   theme_minimal() +
   coord_flip() +
@@ -641,28 +630,12 @@ mean_anxiety_score <- mh_dataset1 %>%
   arrange(desc(mean_anxiety))  
 
 ggplot(mean_anxiety_score, aes(y = reorder(`Time Spent`, mean_anxiety), x = mean_anxiety)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_bar(stat = "identity", fill = "#3c335a") +
   labs(y = "Mean Anxiety Score") +
   theme_minimal() +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
 
-```
-
-#### Mean Self Esteem score of each Time group of participants
-
-```{r}
-mean_self_esteem_score <- mh_dataset1 %>%
-  group_by(`Time Spent`) %>%
-  summarise(mean_self_esteem = mean(Self_Esteem_Score)) %>%
-  arrange(desc(mean_self_esteem))  
-
-ggplot(mean_self_esteem_score, aes(y = reorder(`Time Spent`, mean_self_esteem), x = mean_self_esteem)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
-  labs(y = "Mean Self Esteem Score") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
 ```
 
 #### Mean Depression score of each Time group of participants
@@ -674,8 +647,26 @@ mean_depression_score <- mh_dataset1 %>%
   arrange(desc(mean_depression))  
 
 ggplot(mean_depression_score, aes(y = reorder(`Time Spent`, mean_depression), x = mean_depression)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_bar(stat = "identity", fill = "#638d96") +
   labs(y = "Mean Depression Score") +
+  theme_minimal() +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
+```
+
+#### 
+
+#### Mean Self Esteem score of each Time group of participants
+
+```{r}
+mean_self_esteem_score <- mh_dataset1 %>%
+  group_by(`Time Spent`) %>%
+  summarise(mean_self_esteem = mean(Self_Esteem_Score)) %>%
+  arrange(desc(mean_self_esteem))  
+
+ggplot(mean_self_esteem_score, aes(y = reorder(`Time Spent`, mean_self_esteem), x = mean_self_esteem)) +
+  geom_bar(stat = "identity", fill = "#a9f4c5") +
+  labs(y = "Mean Self Esteem Score") +
   theme_minimal() +
   coord_flip() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
@@ -698,7 +689,7 @@ ggplot(mean_total_score, aes(y = reorder(`Time Spent`, mean_total), x = mean_tot
 
 ```
 
-####Mean mental health aspects scores of each time group 
+#### Mean mental health aspects scores of each time group
 
 ```{r}
 mean_scores <- mh_dataset1 %>%
@@ -710,7 +701,6 @@ mean_scores <- mh_dataset1 %>%
     mean_depression = mean(Depression_Score, na.rm = TRUE)
   )
 
-# Pivot longer to get long format
 mean_scores_long <- mean_scores %>%
   pivot_longer(
     cols = starts_with("mean_"),
@@ -718,7 +708,6 @@ mean_scores_long <- mean_scores %>%
     values_to = "Mean_Score"
   )
 
-# Rename Mental Health Score columns for better readability
 mean_scores_long$Mental_Health_Score <- gsub("mean_", "", mean_scores_long$Mental_Health_Score)
 
 mean_scores_long$`Time Spent` <- factor(mean_scores_long$`Time Spent`, levels = c(
@@ -732,7 +721,6 @@ mean_scores_long$`Time Spent` <- factor(mean_scores_long$`Time Spent`, levels = 
 
 colors <- c("adhd" = "#ce3c3c", "anxiety" = "#3c335a", "depression" = "#638d96", "self_esteem" = "#a9f4c5")
 
-# Plot the data
 ggplot(mean_scores_long, aes(x = `Time Spent`, y = Mean_Score, color = Mental_Health_Score, group = Mental_Health_Score)) +
   geom_line(size = 0.5) +
   geom_point(size = 2) +
@@ -742,19 +730,72 @@ ggplot(mean_scores_long, aes(x = `Time Spent`, y = Mean_Score, color = Mental_He
   theme(axis.text.x = element_text(size = 8,angle = 45, hjust = 1))
 
 ```
-##Machine Learning 
 
-###Decision Tree 
+## Machine Learning
 
-Initially, I will implement the decision tree model using the data set in its current form, as this model is particularly accommodating to unmodified data. This approach will allow us to assess the model's performance with minimal adjustments to the dataset.
+### Pre-processing data 
 
-
-Libraries needed to perform a decision tree: 
+#### Converting Time Spent into binary
 
 ```{r}
 mh_dataset1 <- mh_dataset1 %>%
-  mutate(across(c(Sex, `Relationship Status`, Occupation, Affiliations,`Social Media User?`, `Platforms Used`, `Time Spent`, Outcome), as.factor)) 
+  mutate(`Time Spent` = as.factor(`Time Spent`)) %>%
+  dummy_cols("Time Spent", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Time Spent_", "", .x), starts_with("Time Spent_"))
+
 ```
+
+#### Converting sex into binary
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  mutate(`Sex` = as.factor(`Sex`)) %>%
+  dummy_cols("Sex", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Sex_", "", .x), starts_with("Sex_"))
+```
+
+#### Converting platforms used into binary
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  separate_rows(`Platforms Used`, sep = ",\\s*") %>%
+  mutate(`Platforms Used` = as.factor(`Platforms Used`)) %>%
+  dummy_cols("Platforms Used", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Platforms Used_", "", .x), starts_with("Platforms Used_"))
+```
+
+#### Converting relationship status into binary
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  mutate(`Relationship Status` = as.factor(`Relationship Status`)) %>%
+  dummy_cols("Relationship Status", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Relationship Status_", "", .x), starts_with("Relationship Status_"))
+```
+
+#### Converting Occupation into binary
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  mutate(`Occupation` = as.factor(`Occupation`)) %>%
+  dummy_cols("Occupation", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Occupation_", "", .x), starts_with("Occupation_"))
+```
+
+#### Converting Affiliations into binary
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  separate_rows(`Affiliations`, sep = ",\\s*") %>%
+  mutate(`Affiliations` = as.factor(`Affiliations`)) %>%
+  dummy_cols("Affiliations", remove_selected_columns = TRUE) %>%
+  rename_with(~ gsub("Affiliations_", "", .x), starts_with("Affiliations_")) 
+```
+
+####  Removing unedeed columns 
+
+This function will remove the ' Social Media User?' column from the data
+set if every entry is 'Yes'
 
 ```{r}
 if (all(mh_dataset1$`Social Media User?` == "Yes")) {
@@ -763,7 +804,51 @@ if (all(mh_dataset1$`Social Media User?` == "Yes")) {
 }
 ```
 
-Data split 
+#### Correlation Plot and Heat-map
+
+"Total Score" variable is dropped since it is essentially the sum of 4
+other independent variable columns. Therefore it is a dependent variable
+that is not meaningful in the machine learning part of this project.
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>% select(-Total_Score)
+```
+
+Select the numerical values of the data frame
+
+```{r}
+numeric_data <- select_if(mh_dataset1, is.numeric) 
+correlation_matrix <- cor(numeric_data)
+print(correlation_matrix)
+```
+
+Visualization of the correlation
+
+```{r}
+correlation_matrix %>%
+  corrplot(method = "number", tl.cex = 0.55, number.cex = 0.7, type = "lower")
+```
+
+Categorical variables to factors
+
+```{r}
+mh_dataset1 <- mh_dataset1 %>%
+  mutate(across(c(
+    `Female`,`Male`,`Others`, 
+    `Between 1 and 2 hours`, `Between 2 and 3 hours`, `Between 3 and 4 hours`, `Between 4 and 5 hours`, 
+    `Less than an Hour`, `More than 5 hours`, 
+    Discord, Facebook, Instagram, Pinterest, Reddit, Snapchat, TikTok, Twitter, YouTube, 
+    Divorced, `In a relationship`, Married, Single, 
+    Retired, `Salaried Worker`, `School Student`, `University Student`, 
+    Company, Goverment, `N/A`, Private, School, University, 
+    Outcome
+  ), as.factor)) %>% select(-Self_Esteem_Score,-Depression_Score, -Anxiety_Score, -ADHD_Score)
+
+```
+
+### Decision Tree
+
+Data split
 
 ```{r}
 set.seed(123) 
@@ -772,27 +857,25 @@ train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
 
-Recipe 
+Recipe
 
 ```{r}
-
 recipe <- recipe(Outcome ~ ., data = train_data) %>%
   step_dummy(all_nominal_predictors(), -all_outcomes()) %>%
   step_zv(all_predictors()) %>%
   step_normalize(all_numeric_predictors())
-
+                 
 ```
 
-Model 
+Model
 
 ```{r}
 tree_spec <- decision_tree() %>%
   set_engine("rpart") %>%
   set_mode("classification")
-
 ```
 
-Workflow 
+Workflow
 
 ```{r}
 tree_workflow <- workflow() %>%
@@ -805,10 +888,9 @@ Cross-validation
 ```{r}
 set.seed(123)
 cv_splits <- vfold_cv(train_data, v = 5)
-
 ```
 
-Train and evaluation 
+Train and evaluation
 
 ```{r}
 tree_res <- tree_workflow %>%
@@ -820,29 +902,31 @@ tree_metrics <- tree_res %>%
   collect_metrics()
 print(tree_metrics)
 
-# Final fit on the training data
 final_tree <- tree_workflow %>%
   fit(data = train_data)
+```
 
+```{r}
 saveRDS(final_tree, "tree_model.rds")
 ```
 
-Prediction 
+Prediction
 
 ```{r}
-# Predict on the test set with probabilities
 test_predictions_tree_prob <- final_tree %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_tree_class <- final_tree %>%
   predict(test_data) %>%
   rename(.pred_class = .pred_class)
 
-# Combine predictions with the test data
 test_tree_predictions <- bind_cols(test_predictions_tree_prob, test_predictions_tree_class, test_data)
 
+```
 
+Calculating metrics on the test set
+
+```{r}
 accuracy_metric <- test_tree_predictions %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -865,7 +949,7 @@ test_tree_metrics <- bind_rows(
 print(test_tree_metrics)
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_test <-
@@ -875,7 +959,7 @@ conf_mat_test
 conf_mat_test %>% summary()
 ```
 
-Tree plot 
+Tree plot
 
 ```{r}
 final_tree %>%
@@ -906,135 +990,9 @@ fit_gini %>%
                 "Datos: Mental Health"))
 ```
 
-###Preprocessing data for machine learning 
+### KNN
 
-#### Converting Time Spent category to Numerical Values
-
-To create a correlation matrix we should have our variables as numerical, this is why I will convert the "Time Spent" variable into numerical. Without this step, we will not obtain any correlations between the time spent and other independent variables.
-
-'Less than an Hour' = 0 'Between 1 and 2 hours' = 1 'Between 2 and 3 hours' = 2 'Between 3 and 4 hours' = 3 'Between 4 and 5 hours' = 4 'More than 5 hours' = 5
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  mutate(`Time Spent` = as.factor(`Time Spent`)) %>%
-  dummy_cols("Time Spent", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Time Spent_", "", .x), starts_with("Time Spent_"))
-
-```
-
-#### Converting sex into binary 
-We will also give the Gender variable numerical values so that they can be used in the correlation plots, heatmaps and machine learning.
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  mutate(`Sex` = as.factor(`Sex`)) %>%
-  dummy_cols("Sex", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Sex_", "", .x), starts_with("Sex_"))
-```
-
-#### Converting social media user into binary 
-
-```{r}
-#mh_dataset1 <- mh_dataset1 %>% mutate(`Social Media User?` = case_when(`Social Media User?` == 'No'   ~ 0,`Social Media User?` == 'Yes' ~ 1,TRUE            ~ NA_integer_))
-```
-
-#### Converting platforms used into binary 
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  separate_rows(`Platforms Used`, sep = ",\\s*") %>%
-  mutate(`Platforms Used` = as.factor(`Platforms Used`)) %>%
-  dummy_cols("Platforms Used", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Platforms Used_", "", .x), starts_with("Platforms Used_"))
-
-head(mh_dataset1)
-```
-
-#### Converting relationship status into binary 
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  mutate(`Relationship Status` = as.factor(`Relationship Status`)) %>%
-  dummy_cols("Relationship Status", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Relationship Status_", "", .x), starts_with("Relationship Status_"))
-
-head(mh_dataset1)
-
-```
-
-#### Converting Occupation into binary 
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  mutate(`Occupation` = as.factor(`Occupation`)) %>%
-  dummy_cols("Occupation", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Occupation_", "", .x), starts_with("Occupation_"))
-
-head(mh_dataset1)
-
-```
-
-#### Converting Affiliations into binary 
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  separate_rows(`Affiliations`, sep = ",\\s*") %>%
-  mutate(`Affiliations` = as.factor(`Affiliations`)) %>%
-  dummy_cols("Affiliations", remove_selected_columns = TRUE) %>%
-  rename_with(~ gsub("Affiliations_", "", .x), starts_with("Affiliations_")) 
-
-head(mh_dataset1)
-```
-
-### Correlation Plot and Heatmap
-
-"Total Score" variable is dropped since it is essentially the sum of 4
-other independent variable columns. Therefore it is a dependent variable
-that is not meaningful in the machine learning part of this project.
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  select(-Total_Score)
-```
-
-Select the numerical values of the data frame
-
-```{r}
-numeric_data <- select_if(mh_dataset1, is.numeric) 
-correlation_matrix <- cor(numeric_data)
-print(correlation_matrix)
-
-```
-
-Visualization of the correlation
-
-```{r}
-corrplot(correlation_matrix, method = "color")
-correlation_matrix %>%
-  corrplot(method = "number", tl.cex = 0.55, number.cex = 0.7, type = "lower")
-```
-
-###KNN 
-
-Categorical variables to factors
-
-```{r}
-mh_dataset1 <- mh_dataset1 %>%
-  mutate(across(c(
-    `Female`,`Male`,`Others`, 
-    `Between 1 and 2 hours`, `Between 2 and 3 hours`, `Between 3 and 4 hours`, `Between 4 and 5 hours`, 
-    `Less than an Hour`, `More than 5 hours`, 
-    Discord, Facebook, Instagram, Pinterest, Reddit, Snapchat, TikTok, Twitter, YouTube, 
-    Divorced, `In a relationship`, Married, Single, 
-    Retired, `Salaried Worker`, `School Student`, `University Student`, 
-    Company, Goverment, `N/A`, Private, School, University, 
-    Outcome
-  ), as.factor)) %>% select(-Self_Esteem_Score,-Depression_Score, -Anxiety_Score, -ADHD_Score)
-
-
-```
-
-Split Data 
+Data Split
 
 ```{r}
 set.seed(123) 
@@ -1043,7 +1001,7 @@ train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
 
-Recipe creation
+Recipe
 
 ```{r}
 
@@ -1054,9 +1012,7 @@ recipe <- recipe(Outcome ~ ., data = train_data) %>%
 
 ```
 
-
-Best hyperparameters 
-
+Model
 
 ```{r}
 knn_spec <- nearest_neighbor(neighbors = 5) %>%
@@ -1064,17 +1020,15 @@ knn_spec <- nearest_neighbor(neighbors = 5) %>%
   set_mode("classification")
 ```
 
-Workflow 
+Workflow
 
 ```{r}
-# Create a workflow
 knn_workflow <- workflow() %>%
   add_recipe(recipe) %>%
   add_model(knn_spec)
-
 ```
 
-Cross-validation 
+Cross-validation
 
 ```{r}
 set.seed(123)
@@ -1093,34 +1047,38 @@ knn_res <- knn_workflow %>%
 best_knn <- select_best(knn_res, "roc_auc")
 ```
 
-Final fit on the training data
+Final workflow
+
 ```{r}
 final_knn_workflow <- finalize_workflow(knn_workflow,best_knn)
 ```
 
-Final fit and test set prediction
+Final fit on the training data
 
 ```{r}
 final_knn <- final_knn_workflow %>%
   fit(data = train_data)
+```
+
+```{r}
 saveRDS(final_knn, "knn_model.rds")
 ```
 
-Predictions 
+Prediction
 
 ```{r}
-# Predict on the test set with probabilities
 test_predictions_knn_prob <- final_knn %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_knn_class <- final_knn %>%
   predict(test_data)
 
-# Combine predictions with the test data
 test_knn_predictions <- bind_cols(test_predictions_knn_prob, test_predictions_knn_class, test_data)
+```
 
-# Evaluate on the test set
+Calculating metrics on the test set
+
+```{r}
 accuracy_metric_knn <- test_knn_predictions %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -1144,7 +1102,7 @@ print(test_knn_metrics)
 
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_knn_test <-
@@ -1154,12 +1112,14 @@ conf_mat_knn_test
 conf_mat_knn_test %>% summary()
 ```
 
-###Logistic Regression 
+### Logistic Regression
+
+Model
 
 ```{r}
 log_reg_spec <- logistic_reg(
-  penalty = tune(),  # L2 regularization
-  mixture = tune()   # Mixture of L1 and L2 (0 = Ridge, 1 = Lasso)
+  penalty = tune(),  
+  mixture = tune()   
 ) %>%
   set_engine("glmnet") %>%
   set_mode("classification")
@@ -1173,7 +1133,7 @@ log_reg_workflow <- workflow() %>%
   add_model(log_reg_spec)
 ```
 
-Cross-validation and grid tuning 
+Cross-validation and grid tuning
 
 ```{r}
 set.seed(123)
@@ -1185,7 +1145,7 @@ log_reg_grid <- grid_regular(
 )
 ```
 
-Train the model with re sampling 
+Train and evaluation
 
 ```{r}
 set.seed(123)
@@ -1201,7 +1161,7 @@ best_log_reg <-
 
 ```
 
-Best Hyperparameters
+Final workflow
 
 ```{r}
 final_log_reg_workflow <- 
@@ -1209,31 +1169,30 @@ final_log_reg_workflow <-
                     best_log_reg)
 ```
 
-Fit on the training Data 
+Final fit on the training data
 
 ```{r}
 final_log_reg <- final_log_reg_workflow %>%
   fit(data = train_data)
-saveRDS(final_log_reg, "log_model.rds")
-
 ```
 
-Prediction 
+```{r}
+saveRDS(final_log_reg, "log_model.rds")
+```
+
+Prediction
 
 ```{r}
-# Predict on the test set with probabilities
 test_predictions_log_prob <- final_log_reg %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_log_class <- final_log_reg %>%
   predict(test_data) 
 
-# Combine predictions with the test data
 test_log_predictions <- bind_cols(test_predictions_log_prob, test_predictions_log_class, test_data)
 ```
 
-Calculating metrics on the test set 
+Calculating metrics on the test set
 
 ```{r}
 accuracy_metric_log <- test_log_predictions %>%
@@ -1259,7 +1218,7 @@ print(test_log_metrics)
 
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_log_test <-
@@ -1290,7 +1249,9 @@ fit_gini_log %>%
                 "Datos: Mental Health"))
 ```
 
-###Gradient Boost  
+### Gradient Boost
+
+Model
 
 ```{r}
 boost_spec <- boost_tree(
@@ -1302,16 +1263,15 @@ boost_spec <- boost_tree(
   set_mode("classification")
 ```
 
-Workflow 
+Workflow
 
 ```{r}
 boost_workflow <- workflow() %>%
   add_recipe(recipe) %>%
   add_model(boost_spec)
-
 ```
 
-Cross-validation and grid tune
+Cross-validation and grid tuning
 
 ```{r}
 set.seed(123)
@@ -1324,7 +1284,7 @@ gboost_grid <- grid_regular(
   loss_reduction(range = c(0, 1)))
 ```
 
-Train the model with re sampling 
+Train and evaluation
 
 ```{r}
 set.seed(123)
@@ -1337,7 +1297,7 @@ tuned_gboost <- tune_grid(
 best_gboost <- select_best(tuned_gboost, "roc_auc")
 ```
 
-Best Hyperparameters
+Final workflow
 
 ```{r}
 
@@ -1347,31 +1307,30 @@ final_gboost_workflow <- finalize_workflow(
 
 ```
 
-Final fit on training data 
+Final fit on the training data
 
 ```{r}
 final_boost <- final_gboost_workflow %>%
   fit(data = train_data)
-saveRDS(final_boost, "boost_model.rds")
-
 ```
 
-Predict on test set 
+```{r}
+saveRDS(final_boost, "boost_model.rds")
+```
+
+Prediction
 
 ```{r}
-# Predict on the test set with probabilities
 test_predictions_boost_prob <- final_boost %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_boost_class <- final_boost %>%
   predict(test_data) 
 
-# Combine predictions with the test data
 test_boost_predictions <- bind_cols(test_predictions_boost_prob, test_predictions_boost_class, test_data)
 ```
 
-Calculating metrics on the test set 
+Calculating metrics on the test set
 
 ```{r}
 accuracy_metric_boost <- test_boost_predictions %>%
@@ -1397,7 +1356,7 @@ print(test_boost_metrics)
 
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_boost_test <-
@@ -1415,7 +1374,6 @@ fit_gini_boost <-
   extract_fit_engine()
 
 vi(fit_gini_boost)
-
 ```
 
 ```{r}
@@ -1428,9 +1386,9 @@ fit_gini_boost %>%
                 "Datos: Mental Health"))
 ```
 
-###Random Forest 
+### Random Forest
 
-Split Data 
+Data Split
 
 ```{r}
 set.seed(123)
@@ -1439,17 +1397,16 @@ train_data <- training(data_split)
 test_data <- testing(data_split)
 ```
 
-Recipe creation
+Recipe
 
 ```{r}
-
 recipe <- recipe(Outcome ~ ., data = train_data) %>%
   step_dummy(all_nominal_predictors(), -all_outcomes()) %>%
   step_normalize(all_numeric_predictors()) %>%
   step_smote(Outcome)
-
 ```
 
+Model
 
 ```{r}
 rf_spec <- rand_forest(
@@ -1459,14 +1416,17 @@ rf_spec <- rand_forest(
 ) %>%
   set_engine("ranger") %>%
   set_mode("classification")
+```
 
+Workflow
+
+```{r}
 rf_workflow <- workflow() %>%
   add_recipe(recipe) %>%
   add_model(rf_spec)
-
 ```
 
-Cross-validation and grid tune
+Cross-validation and grid tuning
 
 ```{r}
 set.seed(123)
@@ -1480,7 +1440,7 @@ rf_grid <- grid_regular(
 )
 ```
 
-Train the model with re sampling 
+Train and evaluation
 
 ```{r}
 set.seed(123)
@@ -1494,37 +1454,40 @@ rf_res <- tune_grid(
 best_rf <- select_best(rf_res, "roc_auc")
 ```
 
-Best hyperparameters 
+Final workflow
 
 ```{r}
 final_rf_workflow <- finalize_workflow(rf_workflow,best_rf)
 ```
 
-Final fit and test set prediction
+Final fit on training data
 
 ```{r}
 final_rf <- final_rf_workflow %>%
   fit(data = train_data)
+```
 
+```{r}
 saveRDS(final_rf, "rf_model.rds")
 ```
 
-Predictions 
+Prediction
 
 ```{r}
 test_predictions_rf_prob <- final_rf %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_rf_class <- final_rf %>%
   predict(test_data)  %>%
   rename(.pred_class = .pred_class)
 
-
-# Combine predictions with the test data
 test_rf_predictions <- bind_cols(test_predictions_rf_prob, test_predictions_rf_class, test_data)
 
-# Evaluate on the test set
+```
+
+Calculating metrics on the test set
+
+```{r}
 accuracy_metric_rf <- test_rf_predictions %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -1545,10 +1508,9 @@ test_rf_metrics <- bind_rows(
 )
 
 print(test_rf_metrics)
-
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_rf_test <-
@@ -1559,22 +1521,30 @@ conf_mat_rf_test %>% summary()
 
 ```
 
-###Support Vector Machines 
+### Support Vector Machines
+
+Model
 
 ```{r}
 svm_spec <- svm_rbf(
   cost = tune(),         
   rbf_sigma = tune()     
 ) %>%
-  set_engine("kernlab") %>%
+  set_engine("kernlab") %>% 
   set_mode("classification")
 
+```
+
+Workflow
+
+```{r}
 svm_workflow <- workflow() %>%
   add_recipe(recipe) %>%
   add_model(svm_spec)
+
 ```
 
-Cross-validation and grid tune 
+Cross-validation and grid tuning
 
 ```{r}
 set.seed(123)
@@ -1586,7 +1556,7 @@ svm_grid <- grid_regular(
 )
 ```
 
-Train the model with re sampling 
+Train and evaluation
 
 ```{r}
 set.seed(123)
@@ -1600,7 +1570,7 @@ tuned_svm <- tune_grid(
 best_svm <- select_best(tuned_svm, "roc_auc")
 ```
 
-Best hyperparameters 
+Final workflow
 
 ```{r}
 final_svm_workflow <- finalize_workflow(
@@ -1608,30 +1578,32 @@ final_svm_workflow <- finalize_workflow(
   best_svm)
 ```
 
-Final fit and test set prediction
+Final fit on the training data
 
 ```{r}
 final_svm <- final_svm_workflow %>%
   fit(data = train_data)
-saveRDS(final_svm, "svm_model.rds")
-
 ```
 
-Predictions
+```{r}
+saveRDS(final_nb, "nb_model.rds")
+```
+
+Prediction
 
 ```{r}
 test_predictions_svm_prob <- final_svm %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_svm_class <- final_svm %>%
   predict(test_data) 
 
-# Combine predictions with the test data
 test_svm_predictions <- bind_cols(test_predictions_svm_prob, test_predictions_svm_class, test_data)
+```
 
+Calculating metrics on the test set
 
-# Evaluate on the test set
+```{r}
 accuracy_metric_svm <- test_svm_predictions %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -1652,11 +1624,9 @@ test_metrics_svm <- bind_rows(
 )
 
 print(test_metrics_svm)
-
-
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_svm_test <-
@@ -1664,22 +1634,27 @@ conf_mat_svm_test <-
   conf_mat(truth = Outcome, estimate = .pred_class)
 conf_mat_svm_test
 conf_mat_svm_test %>% summary()
-
 ```
 
-###Naive Bayes
+### Naive Bayes
+
+Model
 
 ```{r}
 nb_spec <- naive_Bayes() %>%
   set_engine("naivebayes") %>%
   set_mode("classification")
+```
 
+Workflow
+
+```{r}
 nb_workflow <- workflow() %>%
   add_recipe(recipe) %>%
   add_model(nb_spec)
 ```
 
-Cross-validation and model fitting
+Train and evaluation
 
 ```{r}
 nb_res <- nb_workflow %>%
@@ -1691,6 +1666,7 @@ nb_res <- nb_workflow %>%
 best_nb <- select_best(nb_res, "roc_auc")
 ```
 
+Final workflow
 
 ```{r}
 final_nb_workflow <- finalize_workflow(
@@ -1698,29 +1674,32 @@ final_nb_workflow <- finalize_workflow(
   best_nb)
 ```
 
-Final fit 
+Final fit on the training data
 
 ```{r}
 final_nb <- final_nb_workflow %>%
   fit(data = train_data)
-saveRDS(final_nb, "nb_model.rds")
-
 ```
 
-Predictions 
+```{r}
+saveRDS(final_nb, "nb_model.rds")
+```
+
+Prediction
 
 ```{r}
 test_predictions_nb_prob <- final_nb %>%
   predict(test_data, type = "prob")
 
-# Predict on the test set with class labels
 test_predictions_nb_class <- final_nb %>%
   predict(test_data) 
 
-# Combine predictions with the test data
 test_nb_predictions <- bind_cols(test_predictions_nb_prob, test_predictions_nb_class, test_data)
+```
 
-# Evaluate on the test set
+Calculating metrics on the test set
+
+```{r}
 accuracy_metric_nb <- test_nb_predictions %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -1741,10 +1720,9 @@ test_metrics_nb <- bind_rows(
 )
 
 print(test_metrics_nb)
-
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_nb_test <-
@@ -1754,9 +1732,9 @@ conf_mat_nb_test
 conf_mat_nb_test %>% summary()
 ```
 
-###Ensemble 
+### Ensemble
 
-Combine all the prediction for each model 
+Combine all the prediction for each model
 
 ```{r}
 combined_predictions <- test_data %>%
@@ -1771,7 +1749,7 @@ combined_predictions <- test_data %>%
   )
 ```
 
-Ensemble Model 
+Recipe
 
 ```{r}
 meta_recipe <- recipe(Outcome ~ ., data = combined_predictions) %>%
@@ -1779,27 +1757,36 @@ meta_recipe <- recipe(Outcome ~ ., data = combined_predictions) %>%
   update_role(Outcome, new_role = "outcome")
 
 meta_recipe
-
 ```
 
-Define and Train the ensemble model 
+Model
 
 ```{r}
 meta_model_spec <- logistic_reg() %>%
   set_engine("glm") %>%
   set_mode("classification")
+```
 
+Workflow
+
+```{r}
 meta_workflow <- workflow() %>%
   add_recipe(meta_recipe) %>%
   add_model(meta_model_spec)
+```
 
+Final fit on the training data
+
+```{r}
 meta_fit <- meta_workflow %>%
   fit(data = combined_predictions)
+```
 
+```{r}
 saveRDS(meta_fit, "final_ensemble.rds")
 ```
 
-Predictions 
+Prediction
 
 ```{r}
 final_preds_prob <- meta_fit %>%
@@ -1809,7 +1796,11 @@ final_preds_class <- meta_fit %>%
   predict(combined_predictions) 
 
 final_preds <- bind_cols(final_preds_prob, final_preds_class, test_data)
+```
 
+Calculating metrics on the test set
+
+```{r}
 accuracy_metric_ensemble <- final_preds %>%
   accuracy(truth = Outcome, estimate = .pred_class)
 
@@ -1830,19 +1821,25 @@ test_ensemble_metrics <- bind_rows(
 )
 
 print(test_ensemble_metrics)
-
 ```
 
-Confusion Matrix 
+Confusion Matrix
 
 ```{r}
 conf_mat_ens_test <-
   final_preds %>%
   conf_mat(truth = Outcome, estimate = .pred_class)
 conf_mat_ens_test
-conf_mat_ens_test %>% summary()
+results_confusion_matrix <- conf_mat_ens_test %>% summary()
+results_confusion_matrix <- kable(results_confusion_matrix, col.names = c("Metric", "Estimator", "Estimate"))
 ```
-All models metrics to see which one is the best one 
+
+```{r}
+results_confusion_matrix
+save_kable(results_confusion_matrix, file = "results_confusion_matrix.png")
+```
+
+#### Table metrics of all models
 
 ```{r}
 metrics_list <- list(
@@ -1856,7 +1853,6 @@ metrics_list <- list(
   ensemble = test_ensemble_metrics
 )
 
-
 combined_metrics <- bind_rows(metrics_list, .id = "model") |> 
   pivot_wider(names_from = .metric,values_from = .estimate) |> 
   select(-.estimator)
@@ -1864,3 +1860,8 @@ combined_metrics <- bind_rows(metrics_list, .id = "model") |>
 print(combined_metrics)
 ```
 
+```{r}
+results_combined_metrics <- kable(combined_metrics, col.names = c("Model", "Accuracy", "roc_auc", "Sensitivity", "Specificity"))
+results_combined_metrics
+save_kable(results_combined_metrics, file = "results_combined_metrics.png")
+```
