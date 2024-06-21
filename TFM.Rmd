@@ -254,17 +254,28 @@ mh_dataset1$Outcome <- as.factor(mh_dataset1$Outcome)
 ## Visualizations
 
 ### Age
-
 ```{r}
-mean(mh_dataset1$Age)
-sd(mh_dataset1$Age)
+mean_age <- mean(mh_dataset1$Age)
+sd_age <- sd(mh_dataset1$Age)
 ```
 
 ```{r}
 a <- ggplot(mh_dataset1, aes(x = Age)) +
-  geom_bar(fill = "skyblue", color = "black",size = 0.3) +
-  labs(x = "Age", y = "Count") +
-  theme_classic() 
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  labs(
+    title = "",
+    subtitle = paste("Mean Age:", round(mean_age, 2), "| SD:", round(sd_age, 2)),
+    x = "Age",
+    y = "Density") +
+  theme_classic() +
+  theme(
+    plot.subtitle = element_text(hjust = 0.5),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 a
 ```
 
@@ -282,11 +293,24 @@ table(mh_dataset1$Sex)
 ```
 
 ```{r}
-p <- ggplot(mh_dataset1, aes(x = Sex)) +
-  geom_bar(fill = c("Female" = "#fbaed2","Male" = "#a5e8f6", "Other" = "#e0b0ff"), color = "black") +
-  labs(x = "Sex", y = "Count") +
-  theme_classic() + 
-  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count)/ total * 100), "%")), vjust = -0.5) 
+p <-  ggplot(mh_dataset1, aes(y = fct_rev(fct_infreq(Sex)))) +
+  geom_bar(fill = "grey", color = "black", alpha = 0.5) +
+  labs(
+    title = " ",
+    x = "Frequency",
+    y = "Sex") +
+  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), hjust = -0.1) +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"),
+    legend.position = "none")
+
+
 p
 ```
 
@@ -304,12 +328,22 @@ table(mh_dataset$`Relationship Status`)
 ```
 
 ```{r}
-r <- ggplot(mh_dataset1, aes(x = `Relationship Status`)) +
-  geom_bar(fill = "#fdfd96", color = "black") +
-  labs(x = "Relationship Status", y = "Count") +
+r <-  ggplot(mh_dataset1, aes(y = `Relationship Status`)) +
+  geom_bar(fill = "grey", color = "black", alpha = 0.5) +
+  labs(
+    title = " ",
+    x = "Frequency",
+    y = "Relationship Status"
+  ) +
+  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), hjust = -0.1) +
   theme_classic() +
-  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
-
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 r
 ```
 
@@ -324,12 +358,23 @@ table(mh_dataset$Occupation)
 ```
 
 ```{r}
-o <- ggplot(mh_dataset1, aes(x = `Occupation`)) +
-  geom_bar(fill = "#ac8038", color = "black") +
-  labs(x = "Occupation", y = "Count") +
+o <-  ggplot(mh_dataset1, aes(y = Occupation)) +
+  geom_bar(fill = "grey", color = "black", alpha = 0.5) +
+  labs(
+    title = " ",
+    x = "Frequency",
+    y = "Occupation") +
+  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), hjust = -0.1) +
   theme_classic() +
-  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
-
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"),
+    legend.position = "none")
 o
 ```
 
@@ -344,7 +389,23 @@ table(mh_dataset1$`Social Media User?`)
 ```
 
 ```{r}
-ggplot(mh_dataset1, aes(x = `Social Media User?`)) + geom_bar(fill = c("Yes" = "#cccccc")) + labs(x = "User", y = "Count") +theme_minimal()
+ggplot(mh_dataset1, aes(y = `Social Media User?`)) +
+  geom_bar(fill = "#cccccc", color = "black", alpha = 0.5) +
+  labs(
+    title = "Distribution of Social Media Users",
+    x = "Frequency",
+    y = "User") +
+  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), hjust = -0.1) +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 12),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"),
+    legend.position = "none")
 ```
 
 Given that there is only one response to this particular question, we
@@ -364,24 +425,19 @@ platforms_df
 ```
 
 ```{r}
-platform_colors <- c(
-  "Discord" = "#7289da",
-  "Facebook" = "#3b5998",
-  "Instagram" = "#e1306c",
-  "Pinterest" = "#bd081c",
-  "Reddit" = "#ff4500",
-  "Snapchat" = "#fffc00",
-  "TikTok" = "#69c9d0",
-  "Twitter" = "#1da1f2",
-  "YouTube" = "#ff0000"
-)
-pu <- ggplot(platforms_df, aes(x = Platform, y = Frequency, fill = Platform)) +
-  geom_bar(stat = "identity", color = "black") +
-  scale_fill_manual(values = platform_colors) +
-  labs(x = "Platform", y = "Frequency", title = "Platform Frequency") +
+pu <- ggplot(platforms_df, aes(y = reorder(Platform, Frequency), x = Frequency)) +
+  geom_bar(stat = "identity", fill = "grey", color = "black", alpha = 0.5) +
+  labs(x = "Frequency", y = "Platform", title = " ") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
-
+  geom_text(aes(label = paste0(sprintf("%.0f", (Frequency / sum(Frequency)) * 100), "%")), hjust = -0.1) +
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"),
+    legend.position = "none")
 pu
 ```
 
@@ -400,11 +456,22 @@ arrange(time_spent_freq_df, Frequency)
 ```
 
 ```{r}
-t <- ggplot(time_spent_freq_df, aes(x = Time_Spent, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-  labs(x = "Time Spent on Social Media", y = "Frequency") +
+t <- ggplot(time_spent_freq_df, aes(y = reorder(Time_Spent, Frequency), x = Frequency)) +
+  geom_bar(stat = "identity", fill = "grey", color = "black", alpha = 0.5) +
+  labs(
+    title = " ",
+    x = "Frequency",
+    y = "Time Spent on Social Media") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
+  geom_text(aes(label = paste0(sprintf("%.0f", (Frequency / sum(Frequency)) * 100), "%")), hjust = -0.1) +
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 8),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"),
+    legend.position = "none")
 t
 ```
 
@@ -426,11 +493,26 @@ names(ADHD_Score_freq_df) <- c("ADHD Score", "Frequency")
 ```
 
 ```{r}
-ADHD <- ggplot(ADHD_Score_freq_df, aes(x = `ADHD Score`, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "#ce3c3c", color = "black") +
-  labs(x = "ADHD Score", y = "Frequency") +
+ADHD <- ggplot(mh_dataset1, aes(x = ADHD_Score)) +
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  geom_vline(aes(xintercept = adhd_mean), color = "blue", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = adhd_mean + adhd_sd), color = "red", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = adhd_mean - adhd_sd), color = "red", linetype = "dotted", size = 1) +
+  labs(
+    title = " ",
+    subtitle = paste("Mean ADHD Score:", round(adhd_mean, 2), "| SD:", round(adhd_sd, 2)),
+    x = "ADHD Score",
+    y = "Density") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
+  theme(
+    plot.subtitle = element_text(hjust = 0.5),  
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
+
 ADHD
 ```
 
@@ -452,11 +534,25 @@ names(Anxiety_Score_freq_df) <- c("Anxiety Score", "Frequency")
 ```
 
 ```{r}
-Anx <- ggplot(Anxiety_Score_freq_df, aes(x = `Anxiety Score`, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "#3c335a", color = "black") +
-  labs(x = "Anxiety Score", y = "Frequency") +
+Anx <- ggplot(mh_dataset1, aes(x = Anxiety_Score)) +
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  geom_vline(aes(xintercept = anx_mean), color = "blue", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = anx_mean + anx_sd), color = "red", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = anx_mean - anx_sd), color = "red", linetype = "dotted", size = 1) +
+  labs(
+    title = " ",
+    subtitle = paste("Mean Anxiety Score:", round(anx_mean, 2), "| SD:", round(anx_sd, 2)),
+    x = "Anxiety Score",
+    y = "Density") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
+  theme(
+    plot.subtitle = element_text(hjust = 0.5), 
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 Anx
 ```
 
@@ -478,11 +574,25 @@ names(Depression_Score_freq_df) <- c("Depression Score", "Frequency")
 ```
 
 ```{r}
-dep <- ggplot(Depression_Score_freq_df, aes(x = `Depression Score`, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "#638d96", color = "black") +
-  labs(x = "Depression Score", y = "Frequency") +
+dep <- ggplot(mh_dataset1, aes(x = Depression_Score)) +
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  geom_vline(aes(xintercept = dep_mean), color = "blue", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = dep_mean + dep_sd), color = "red", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = dep_mean - dep_sd), color = "red", linetype = "dotted", size = 1) +
+  labs(
+    title = " ",
+    subtitle = paste("Mean Depression Score:", round(dep_mean, 2), "| SD:", round(dep_sd, 2)),
+    x = "Depression Score",
+    y = "Density") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
+  theme(
+    plot.subtitle = element_text(hjust = 0.5), 
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 dep
 ```
 
@@ -504,11 +614,25 @@ names(Self_Esteem_Score_freq_df) <- c("Self Esteem Score", "Frequency")
 ```
 
 ```{r}
-se<- ggplot(Self_Esteem_Score_freq_df, aes(x = `Self Esteem Score`, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "#a9f4c5", color = "black") +
-  labs(x = "Self Esteem Score", y = "Frequency") +
+se<- ggplot(mh_dataset1, aes(x = Self_Esteem_Score)) +
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  geom_vline(aes(xintercept = se_mean), color = "blue", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = se_mean + se_sd), color = "red", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = se_mean - se_sd), color = "red", linetype = "dotted", size = 1) +
+  labs(
+    title = " ",
+    subtitle = paste("Mean Self-Esteem Score:", round(se_mean, 2), "| SD:", round(se_sd, 2)),
+    x = "Self-Esteem Score",
+    y = "Density" ) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
+  theme(
+    plot.subtitle = element_text(hjust = 0.5), 
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 se
 ```
 
@@ -534,16 +658,24 @@ results_kable
 ```
 
 ```{r}
-colors <- c("adhd" = "#ce3c3c", "anxiety" = "#3c335a", "depression" = "#638d96", "self_esteem" = "#a9f4c5")
-
-results_plot <- ggplot(results, aes(x = Score, y = Mean)) + 
-  geom_point(size = 2, color = colors) +     
-  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD, color = Score), width = 0.2, color = colors) +
-  labs(title = " ",
-       x = "Score Type",
-       y = "Mean Value") +
-  theme_classic()
+results_plot <- ggplot(results, aes(x = Score, y = Mean, fill = Score)) + 
+  geom_bar(stat = "identity", position = "dodge", color = "black", width = 0.5, fill = "grey", alpha = 0.5)+     
+  geom_errorbar(aes(ymin = Mean - SD, ymax = Mean + SD), width = 0.15, color = "black") +
+  labs(
+    title = " ",
+    x = "Mental Health Aspect",
+    y = "Mean Score"
+  ) +
+  theme_classic() +
+  theme(
+    axis.title.x = element_text(face = "bold", size = 8),
+    axis.title.y = element_text(face = "bold", size = 8),
+    axis.text = element_text(size = 8),
+    legend.position = "none",
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 results_plot
+
 ```
 
 ```{r}
@@ -553,8 +685,8 @@ ggsave(filename = "Results_plot.png", plot = results_plot, width = 8, height = 6
 ### Total Score
 
 ```{r}
-mean(mh_dataset1$Total_Score)
-sd(mh_dataset1$Total_Score)
+mean_ts <- mean(mh_dataset1$Total_Score)
+sd_ts <- sd(mh_dataset1$Total_Score)
 ```
 
 ```{r}
@@ -565,11 +697,25 @@ arrange(Total_Score_freq_df)
 ```
 
 ```{r}
-ts <- ggplot(Total_Score_freq_df, aes(x = `Total Score`, y = Frequency)) +
-  geom_bar(stat = "identity", fill = "#03224c", color = "black",size = 0.3) +
-  labs(x = "Total Score", y = "Frequency") +
+ts <- ggplot(mh_dataset1, aes(x = Total_Score)) +
+  geom_density(fill = "grey", color = "black", alpha = 0.5) +
+  geom_vline(aes(xintercept = mean_ts), color = "blue", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = mean_ts + sd_ts), color = "red", linetype = "dotted", size = 1) +
+  geom_vline(aes(xintercept = mean_ts - sd_ts), color = "red", linetype = "dotted", size = 1) +
+  labs(
+    title = " ",
+    subtitle = paste("Mean Total Score:", round(mean_ts, 2), "| SD:", round(sd_ts, 2)),
+    x = "Total Score",
+    y = "Density") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) 
+  theme(
+    plot.subtitle = element_text(hjust = 0.5),  
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold"),
+    axis.text = element_text(size = 10),
+    axis.line = element_line(color = "black"),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 ts
 ```
 
@@ -588,12 +734,25 @@ There are 261 contestants that are experiencing mental health symptoms.
 Plot
 
 ```{r}
-outcome <- ggplot(mh_dataset1, aes(x = Outcome)) +
-  geom_bar(aes(fill = factor(Outcome)), color = "black") +
-  scale_fill_manual(values = c("0" = "#d8504d", "1" = "#a3de92")) +
-  labs(x = "Outcome", y = "Count") +
-  theme_classic() +
-  geom_text(stat = "count", aes(label = paste0(sprintf("%.0f", after_stat(count) / total * 100), "%")), vjust = -0.5)
+outcome <- ggplot(mh_dataset1, aes(x = "", fill = factor(Outcome))) +
+  geom_bar(width = 1, alpha = 0.5) +
+  scale_fill_manual(values = c("0" = "grey70", "1" = "grey30")) +
+  coord_polar(theta = "y") +
+  labs(
+    title = " ",
+    subtitle = "0: Not Experiencing Symptoms | 1: Experiencing Symptoms",
+    x = NULL,
+    y = NULL,
+    fill = "Outcome") +
+  theme_void() +
+  theme(
+    plot.subtitle = element_text(hjust = 0.5),
+    legend.title = element_text(face = "bold"),
+    legend.position = "right") +
+  geom_text(stat = "count", aes(label = paste0(sprintf("%.1f", ..count../total * 100), "%")), 
+            position = position_stack(vjust = 0.5), color = "white", size = 5)
+
+
 outcome
 ```
 
@@ -603,7 +762,7 @@ ggsave(filename = "Outcome_plot.png", plot = outcome, width = 8, height = 6, dpi
 
 ### Mean Scores of Mental Health Symptoms in Relation to Time Spent on Social Media Visualizations
 
-#### Mean ADHD score of each Time group of participants
+#### Mean ADHD Score by Time Spent on Social Media
 
 ```{r}
 mean_adhd_score <- mh_dataset1 %>%
@@ -612,15 +771,23 @@ mean_adhd_score <- mh_dataset1 %>%
   arrange(desc(mean_adhd))
 
 ggplot(mean_adhd_score, aes(y = reorder(`Time Spent`, mean_adhd), x = mean_adhd)) +
-  geom_bar(stat = "identity", fill = "#ce3c3c") +
-  labs(x = "Mean ADHD Score", y = "Time Spent") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
-
+  geom_point(size = 3, color = "red", alpha= 0.5) +
+  geom_segment(aes(x = 0, xend = mean_adhd, y = reorder(`Time Spent`, mean_adhd), yend = reorder(`Time Spent`, mean_adhd)), color = "black") +
+  labs(
+    title = "Mean ADHD Score by Time Spent on Social Media",
+    x = "Mean ADHD Score",
+    y = "Time Spent on Social Media") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text = element_text(size = 8),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 ```
 
-#### Mean Anxiety score of each Time group of participants
+#### Mean Anxiety Score by Time Spent on Social Media
 
 ```{r}
 
@@ -629,16 +796,25 @@ mean_anxiety_score <- mh_dataset1 %>%
   summarise(mean_anxiety = mean(Anxiety_Score)) %>%
   arrange(desc(mean_anxiety))  
 
-ggplot(mean_anxiety_score, aes(y = reorder(`Time Spent`, mean_anxiety), x = mean_anxiety)) +
-  geom_bar(stat = "identity", fill = "#3c335a") +
-  labs(y = "Mean Anxiety Score") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
-
+ggplot(mean_anxiety_score, aes(x = reorder(`Time Spent`, mean_anxiety), y = mean_anxiety)) +
+  geom_point(size = 3, color = "red",alpha = 0.5) +
+  geom_segment(aes(y = 0, yend = mean_anxiety, x = reorder(`Time Spent`, mean_anxiety), xend = reorder(`Time Spent`, mean_anxiety)), color = "black") +
+  labs(
+    title = "Mean Anxiety Score by Time Spent on Social Media",
+    y = "Mean Anxiety Score",
+    x = "Time Spent on Social Media") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 8), panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95")) +
+  coord_flip()
 ```
 
-#### Mean Depression score of each Time group of participants
+#### Mean Depression Score by Time Spent on Social Media
 
 ```{r}
 mean_depression_score <- mh_dataset1 %>%
@@ -646,17 +822,25 @@ mean_depression_score <- mh_dataset1 %>%
   summarise(mean_depression = mean(Depression_Score)) %>%
   arrange(desc(mean_depression))  
 
-ggplot(mean_depression_score, aes(y = reorder(`Time Spent`, mean_depression), x = mean_depression)) +
-  geom_bar(stat = "identity", fill = "#638d96") +
-  labs(y = "Mean Depression Score") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
+ggplot(mean_depression_score, aes(x = reorder(`Time Spent`, mean_depression), y = mean_depression)) +
+  geom_point(size = 3, color = "red",alpha = 0.5) +
+  geom_segment(aes(y = 0, yend = mean_depression, x = reorder(`Time Spent`, mean_depression), xend = reorder(`Time Spent`, mean_depression)), color = "black") +
+  labs(
+    title = "Mean Depression Score by Time Spent on Social Media",
+    y = "Mean Depression Score",
+    x = "Time Spent on Social Media") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 8),panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95")) +
+  coord_flip()
 ```
 
-#### 
-
-#### Mean Self Esteem score of each Time group of participants
+#### Mean Self-Esteem Score by Time Spent on Social Media
 
 ```{r}
 mean_self_esteem_score <- mh_dataset1 %>%
@@ -664,15 +848,26 @@ mean_self_esteem_score <- mh_dataset1 %>%
   summarise(mean_self_esteem = mean(Self_Esteem_Score)) %>%
   arrange(desc(mean_self_esteem))  
 
-ggplot(mean_self_esteem_score, aes(y = reorder(`Time Spent`, mean_self_esteem), x = mean_self_esteem)) +
-  geom_bar(stat = "identity", fill = "#a9f4c5") +
-  labs(y = "Mean Self Esteem Score") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
+ggplot(mean_self_esteem_score, aes(x = reorder(`Time Spent`, mean_self_esteem), y = mean_self_esteem)) +
+  geom_point(size = 3, color = "red",alpha = 0.5) +
+  geom_segment(aes(y = 0, yend = mean_self_esteem, x = reorder(`Time Spent`, mean_self_esteem), xend = reorder(`Time Spent`, mean_self_esteem)), color = "black") +
+  labs(
+    title = "Mean Self-Esteem Score by Time Spent on Social Media",
+    y = "Mean Self-Esteem Score",
+    x = "Time Spent on Social Media") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 8),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95")) +
+  coord_flip()
 ```
 
-#### Mean Total score of each Time group of participants
+#### Mean Total Score by Time Spent on Social Media
 
 ```{r}
 mean_total_score <- mh_dataset1 %>%
@@ -680,16 +875,26 @@ mean_total_score <- mh_dataset1 %>%
   summarise(mean_total = mean(Total_Score)) %>%
   arrange(desc(mean_total)) 
 
-ggplot(mean_total_score, aes(y = reorder(`Time Spent`, mean_total), x = mean_total)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
-  labs(y = "Mean Total Score") +
-  theme_minimal() +
-  coord_flip() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6))
-
+ggplot(mean_total_score, aes(x = reorder(`Time Spent`, mean_total), y = mean_total)) +
+  geom_point(size = 3, color = "red",alpha = 0.5) +
+  geom_segment(aes(y = 0, yend = mean_total, x = reorder(`Time Spent`, mean_total), xend = reorder(`Time Spent`, mean_total)), color = "black") +
+  labs(
+    title = "Mean Total Score by Time Spent on Social Media",
+    y = "Mean Total Score",
+    x = "Time Spent on Social Media") +
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 8),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95")) +
+  coord_flip()
 ```
 
-#### Mean mental health aspects scores of each time group
+#### Mean Mental Health Scores by Time Spent on Social Media
 
 ```{r}
 mean_scores <- mh_dataset1 %>%
@@ -698,15 +903,10 @@ mean_scores <- mh_dataset1 %>%
     mean_adhd = mean(ADHD_Score, na.rm = TRUE),
     mean_anxiety = mean(Anxiety_Score, na.rm = TRUE),
     mean_self_esteem = mean(Self_Esteem_Score, na.rm = TRUE),
-    mean_depression = mean(Depression_Score, na.rm = TRUE)
-  )
+    mean_depression = mean(Depression_Score, na.rm = TRUE))
 
 mean_scores_long <- mean_scores %>%
-  pivot_longer(
-    cols = starts_with("mean_"),
-    names_to = "Mental_Health_Score",
-    values_to = "Mean_Score"
-  )
+  pivot_longer(cols = starts_with("mean_"),names_to = "Mental_Health_Score",values_to = "Mean_Score")
 
 mean_scores_long$Mental_Health_Score <- gsub("mean_", "", mean_scores_long$Mental_Health_Score)
 
@@ -716,20 +916,34 @@ mean_scores_long$`Time Spent` <- factor(mean_scores_long$`Time Spent`, levels = 
   "Between 2 and 3 hours",
   "Between 3 and 4 hours",
   "Between 4 and 5 hours",
-  "More than 5 hours"
-))
+  "More than 5 hours"))
 
 colors <- c("adhd" = "#ce3c3c", "anxiety" = "#3c335a", "depression" = "#638d96", "self_esteem" = "#a9f4c5")
 
 ggplot(mean_scores_long, aes(x = `Time Spent`, y = Mean_Score, color = Mental_Health_Score, group = Mental_Health_Score)) +
   geom_line(size = 0.5) +
-  geom_point(size = 2) +
-  labs(x = "Time Spent", y = "Mean Score", color = "Mental Health Score") +
+  geom_point(size = 1) +
+  labs(
+    title = "Mean Mental Health Scores by Time Spent on Social Media",
+    x = "Time Spent on Social Media",
+    y = "Mean Score",
+    color = "Mental Health Aspect") +
   scale_color_manual(values = colors) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(size = 8,angle = 45, hjust = 1))
+  theme_classic() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold", size = 10),
+    axis.title.y = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(size = 7, angle = 30, hjust = 1),
+    axis.text.y = element_text(size = 9),
+    legend.position = "right",
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10), 
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_line(color = "grey95"))
 
 ```
+
 
 ## Machine Learning
 
